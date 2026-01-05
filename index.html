@@ -3,290 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Immortality Tree - Idle RPG</title>
+    <title>Immortality Tree - Adventure</title>
     <style>
         :root {
-            --ink-black: #2c2c2c;
-            --parchment: #f4ece1;
-            --legendary: #d4af37;
-            --epic: #9b59b6;
-            --rare: #3498db;
+            --ink: #2c2c2c; --parchment: #f4ece1; --gold: #d4af37;
+            --common: #7f8c8d; --rare: #3498db; --epic: #9b59b6; --leg: #e67e22;
         }
+        body { background: var(--parchment); font-family: 'Segoe UI', serif; color: var(--ink); margin: 0; display: flex; justify-content: center; }
+        #game-container { width: 100%; max-width: 450px; height: 100vh; display: flex; flex-direction: column; border: 2px solid var(--ink); position: relative; background: white; }
+        
+        /* Navigation Tabs */
+        .tabs { display: flex; background: var(--ink); }
+        .tab-btn { flex: 1; padding: 15px; color: white; border: none; cursor: pointer; background: none; font-weight: bold; }
+        .tab-btn.active { background: #444; border-bottom: 3px solid var(--gold); }
+        
+        .view { display: none; padding: 20px; flex-grow: 1; overflow-y: auto; text-align: center; }
+        .view.active { display: block; }
 
-        body {
-            background-color: var(--parchment);
-            font-family: 'Segoe UI', serif;
-            color: var(--ink-black);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            overflow: hidden;
-        }
+        /* Tree Styles */
+        #divine-tree { width: 150px; height: 200px; margin: 20px auto; background: linear-gradient(to top, #5d4037, #2e7d32); border-radius: 40% 40% 10% 10%; cursor: pointer; transition: 0.1s; border: 3px solid var(--ink); position: relative; }
+        #divine-tree:active { transform: scale(0.95); }
+        #animal { font-size: 40px; position: absolute; bottom: -10px; left: 35%; }
 
-        #game-container {
-            width: 100%;
-            max-width: 500px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
-            border: 2px solid var(--ink-black);
-        }
+        /* Battle Styles */
+        #battle-screen { border: 2px solid var(--ink); padding: 15px; background: #fafafa; min-height: 200px; margin-bottom: 10px; }
+        .health-bar { width: 100%; height: 15px; background: #eee; border: 1px solid var(--ink); margin: 5px 0; }
+        .hp-fill { height: 100%; background: #e74c3c; transition: width 0.3s; }
+        .battle-log { font-size: 12px; height: 80px; overflow-y: auto; border: 1px solid #ddd; padding: 5px; text-align: left; background: #fff; }
 
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 2px solid var(--ink-black);
-            padding-bottom: 10px;
-        }
-
-        #tree-area {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        #divine-tree {
-            width: 200px;
-            height: 250px;
-            background: linear-gradient(to top, #4b3621, #2d5a27);
-            border-radius: 50% 50% 20% 20%;
-            cursor: pointer;
-            transition: transform 0.1s;
-            box-shadow: 0 0 20px rgba(255,255,255,0.5);
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        #divine-tree:active { transform: scale(0.95) rotate(2deg); }
-
-        #animal {
-            font-size: 50px;
-            margin-bottom: -10px;
-        }
-
-        /* Compare Window */
-        #compare-modal {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 3px solid var(--ink-black);
-            padding: 20px;
-            z-index: 100;
-            width: 80%;
-            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
-        }
-
-        .compare-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .stat-up { color: green; font-weight: bold; }
-        .stat-down { color: red; }
-
-        button {
-            background: var(--ink-black);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        #auto-chop-btn {
-            background: #888;
-            margin-top: 10px;
-        }
-
-        .rarity-Common { color: #7f8c8d; }
-        .rarity-Rare { color: var(--rare); }
-        .rarity-Epic { color: var(--epic); }
-        .rarity-Legendary { color: var(--legendary); font-weight: bold; }
+        /* Modals */
+        #compare-modal { display: none; position: absolute; top: 20%; left: 5%; width: 90%; background: white; border: 3px solid var(--ink); z-index: 1000; padding: 15px; box-sizing: border-box; box-shadow: 10px 10px 0 var(--ink); }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; font-size: 14px; }
+        .spirit-card { border: 1px dashed var(--ink); padding: 10px; margin: 5px; cursor: pointer; }
+        .spirit-card.selected { border: 2px solid var(--gold); background: #fffef0; }
+        
+        button { background: var(--ink); color: white; border: none; padding: 10px 15px; cursor: pointer; margin: 5px; border-radius: 4px; }
+        button:disabled { background: #ccc; }
+        .rarity-Common { color: var(--common); } .rarity-Rare { color: var(--rare); }
+        .rarity-Epic { color: var(--epic); } .rarity-Legendary { color: var(--leg); }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div class="stats-bar">
-        <div>Level: <span id="lvl">1</span></div>
-        <div>EXP: <span id="exp">0</span>/100</div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('tree-view')">Tree</button>
+        <button class="tab-btn" onclick="showTab('char-view')">Character</button>
+        <button class="tab-btn" onclick="showTab('adv-view')">Adventure</button>
     </div>
 
-    <div id="tree-area">
+    <div id="tree-view" class="view active">
+        <h3>Divine Tree (Lvl <span id="tree-lvl">1</span>)</h3>
+        <p>Spirit Stones: <span id="stones">0</span></p>
         <div id="divine-tree" onclick="chop()">
-            <div id="animal">🐱</div>
+            <div id="animal">🦊</div>
         </div>
-        <button id="auto-chop-btn" onclick="toggleAuto()" disabled>Auto-Chop (Unlock Lvl 5)</button>
+        <button id="upgrade-tree-btn" onclick="upgradeTree()">Upgrade Tree (50 Stones)</button>
+        <br>
+        <button id="auto-btn" onclick="toggleAuto()" disabled>Auto-Chop (Lv. 5)</button>
+        <div style="margin-top:20px;">
+            Lvl: <span id="p-lvl">1</span> | EXP: <span id="p-exp">0</span>%
+        </div>
     </div>
 
-    <div id="equipment-slots">
-        <strong>Current Stats:</strong> 
-        Attack: <span id="p-atk">5</span> | HP: <span id="p-hp">50</span>
+    <div id="char-view" class="view">
+        <h3>Character Stats</h3>
+        <div class="stat-grid" style="text-align: left; padding: 0 20px;">
+            <div>ATK: <b id="stat-atk">0</b></div>
+            <div>HP: <b id="stat-hp">0</b></div>
+            <div>DEF: <b id="stat-def">0</b></div>
+            <div>SPD: <b id="stat-spd">0</b></div>
+        </div>
+        <hr>
+        <h4>Spirit Companion</h4>
+        <div style="display: flex; justify-content: center;">
+            <div id="spirit-fox" class="spirit-card" onclick="setSpirit('Fox')">🦊 Fox<br><small>+10% ATK</small></div>
+            <div id="spirit-dragon" class="spirit-card" onclick="setSpirit('Dragon')">🐉 Dragon<br><small>+10% HP</small></div>
+        </div>
+        <hr>
+        <h4>Equipment</h4>
+        <div id="equip-list" style="font-size: 14px; text-align: left;"></div>
+    </div>
+
+    <div id="adv-view" class="view">
+        <h3>Monster Forest</h3>
+        <div id="battle-screen">
+            <div id="monster-name">Waiting for Monster...</div>
+            <div class="health-bar"><div id="m-hp-bar" class="hp-fill" style="width: 100%;"></div></div>
+            <div style="font-size: 20px;">⚔️</div>
+            <div class="health-bar"><div id="p-hp-bar" class="hp-fill" style="width: 100%;"></div></div>
+            <div>Your HP</div>
+        </div>
+        <div id="battle-log" class="battle-log"></div>
+        <button id="battle-btn" onclick="startBattle()">Find Battle</button>
     </div>
 
     <div id="compare-modal">
-        <h3 id="item-name">New Item Found!</h3>
-        <p id="item-rarity"></p>
-        <div class="compare-grid">
-            <div>
-                <strong>Current</strong><br>
-                Atk: <span id="curr-atk">0</span><br>
-                HP: <span id="curr-hp">0</span>
-            </div>
-            <div>
-                <strong>New</strong><br>
-                Atk: <span id="new-atk">0</span><br>
-                HP: <span id="new-hp">0</span>
-            </div>
+        <h4 id="new-item-title">New Item</h4>
+        <div class="stat-grid">
+            <div id="curr-item-stats" style="color: #666;"></div>
+            <div id="new-item-stats"></div>
         </div>
-        <div style="display:flex; justify-content: space-around;">
-            <button onclick="equipItem()">Equip</button>
-            <button onclick="closeModal()" style="background:#888">Discard</button>
-        </div>
+        <button onclick="equipItem()">Equip</button>
+        <button onclick="closeModal()" style="background:#888">Discard</button>
     </div>
 </div>
 
 <script>
+    // --- GAME STATE ---
     let player = {
-        lvl: 1,
-        exp: 0,
-        expNeeded: 100,
-        atk: 5,
-        hp: 50,
-        autoChop: false,
-        equipment: {
-            Weapon: { name: "Stick", atk: 2, hp: 0, rarity: "Common" },
-            Armor: { name: "Rags", atk: 0, hp: 10, rarity: "Common" },
-            Accessory: { name: "Stone", atk: 1, hp: 5, rarity: "Common" }
+        lvl: 1, exp: 0, stones: 0, treeLvl: 1,
+        baseAtk: 10, baseHp: 100, baseDef: 5, baseSpd: 10,
+        currentHp: 100,
+        spirit: null,
+        auto: false,
+        equip: {
+            Weapon: { name: "Wooden Stick", atk: 2, def: 0, hp: 0, spd: 0, rarity: "Common" },
+            Armor: { name: "Cloth Shirt", atk: 0, def: 2, hp: 10, spd: 0, rarity: "Common" },
+            Accessory: { name: "Seed Pendant", atk: 1, def: 0, hp: 5, spd: 2, rarity: "Common" }
         }
     };
 
+    let totalStats = {};
     let pendingItem = null;
-    let autoInterval = null;
+    let autoInt = null;
 
-    const types = ["Weapon", "Armor", "Accessory"];
-    const rarities = [
-        { name: "Common", chance: 0.7, mult: 1 },
-        { name: "Rare", chance: 0.2, mult: 2.5 },
-        { name: "Epic", chance: 0.08, mult: 6 },
-        { name: "Legendary", chance: 0.02, mult: 15 }
-    ];
-
-    function chop() {
-        // Gain EXP
-        player.exp += 20;
-        if(player.exp >= player.expNeeded) {
-            player.lvl++;
-            player.exp = 0;
-            player.expNeeded *= 1.5;
-            checkUnlocks();
-        }
-        
-        generateItem();
-        updateUI();
+    // --- LOGIC: TABS & UI ---
+    function showTab(tabId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        updateStats();
     }
 
-    function generateItem() {
-        const type = types[Math.floor(Math.random() * types.length)];
-        const roll = Math.random();
-        let rarity = rarities[0];
+    function updateStats() {
+        let bonusAtk = player.spirit === 'Fox' ? 1.1 : 1;
+        let bonusHp = player.spirit === 'Dragon' ? 1.1 : 1;
+
+        totalStats.atk = Math.floor((player.baseAtk + player.equip.Weapon.atk + player.equip.Armor.atk + player.equip.Accessory.atk) * bonusAtk);
+        totalStats.hp = Math.floor((player.baseHp + player.equip.Weapon.hp + player.equip.Armor.hp + player.equip.Accessory.hp) * bonusHp);
+        totalStats.def = player.baseDef + player.equip.Weapon.def + player.equip.Armor.def + player.equip.Accessory.def;
+        totalStats.spd = player.baseSpd + player.equip.Weapon.spd + player.equip.Armor.spd + player.equip.Accessory.spd;
+
+        document.getElementById('stat-atk').innerText = totalStats.atk;
+        document.getElementById('stat-hp').innerText = totalStats.hp;
+        document.getElementById('stat-def').innerText = totalStats.def;
+        document.getElementById('stat-spd').innerText = totalStats.spd;
+        document.getElementById('p-lvl').innerText = player.lvl;
+        document.getElementById('p-exp').innerText = player.exp;
+        document.getElementById('stones').innerText = player.stones;
+        document.getElementById('tree-lvl').innerText = player.treeLvl;
+
+        if (player.lvl >= 5) document.getElementById('auto-btn').disabled = false;
+
+        let eqHtml = "";
+        for(let type in player.equip) {
+            eqHtml += `<div><b>${type}:</b> <span class="rarity-${player.equip[type].rarity}">${player.equip[type].name}</span></div>`;
+        }
+        document.getElementById('equip-list').innerHTML = eqHtml;
+    }
+
+    // --- LOGIC: CHOPPING ---
+    function chop() {
+        player.exp += 10;
+        if(player.exp >= 100) { player.lvl++; player.exp = 0; }
         
-        let cumulative = 0;
-        for (let r of rarities) {
-            cumulative += r.chance;
-            if (roll < cumulative) {
-                rarity = r;
-                break;
-            }
+        // Generate Item
+        const types = ["Weapon", "Armor", "Accessory"];
+        const rarities = [
+            {n: "Common", c: 0.7, m: 1}, {n: "Rare", c: 0.2, m: 2}, 
+            {n: "Epic", c: 0.08, m: 5}, {n: "Legendary", c: 0.02, m: 12}
+        ];
+        
+        let roll = Math.random();
+        let rarity = rarities[0];
+        let cum = 0;
+        for(let r of rarities) {
+            // Tree level improves rarity slightly
+            let chance = r.c + (player.treeLvl * 0.01);
+            cum += chance;
+            if(roll < cum) { rarity = r; break; }
         }
 
+        let type = types[Math.floor(Math.random()*3)];
         pendingItem = {
-            type: type,
-            rarity: rarity.name,
-            atk: Math.floor(Math.random() * 5 * rarity.mult * player.lvl),
-            hp: Math.floor(Math.random() * 20 * rarity.mult * player.lvl),
-            name: `${rarity.name} ${type}`
+            type: type, rarity: rarity.n, name: `${rarity.n} ${type}`,
+            atk: Math.floor(Math.random() * 5 * rarity.m * (player.treeLvl/2)),
+            hp: Math.floor(Math.random() * 20 * rarity.m * (player.treeLvl/2)),
+            def: Math.floor(Math.random() * 3 * rarity.m),
+            spd: Math.floor(Math.random() * 3 * rarity.m)
         };
 
         showCompare();
+        updateStats();
     }
 
     function showCompare() {
-        const current = player.equipment[pendingItem.type];
-        document.getElementById('compare-modal').style.display = 'block';
-        document.getElementById('item-name').innerText = pendingItem.name;
-        document.getElementById('item-rarity').innerText = pendingItem.rarity;
-        document.getElementById('item-rarity').className = `rarity-${pendingItem.rarity}`;
-        
-        document.getElementById('curr-atk').innerText = current.atk;
-        document.getElementById('curr-hp').innerText = current.hp;
-        
-        document.getElementById('new-atk').innerText = pendingItem.atk;
-        document.getElementById('new-hp').innerText = pendingItem.hp;
-
-        // Visual coloring
-        document.getElementById('new-atk').className = pendingItem.atk > current.atk ? 'stat-up' : 'stat-down';
-        document.getElementById('new-hp').className = pendingItem.hp > current.hp ? 'stat-up' : 'stat-down';
+        const modal = document.getElementById('compare-modal');
+        const cur = player.equip[pendingItem.type];
+        modal.style.display = 'block';
+        document.getElementById('new-item-title').innerText = pendingItem.name;
+        document.getElementById('curr-item-stats').innerHTML = `Current:<br>Atk: ${cur.atk}<br>HP: ${cur.hp}<br>Def: ${cur.def}`;
+        document.getElementById('new-item-stats').innerHTML = `New:<br>Atk: ${pendingItem.atk}<br>HP: ${pendingItem.hp}<br>Def: ${pendingItem.def}`;
     }
 
     function equipItem() {
-        player.equipment[pendingItem.type] = pendingItem;
-        calculateStats();
+        player.equip[pendingItem.type] = pendingItem;
         closeModal();
-    }
-
-    function calculateStats() {
-        player.atk = 5 + player.equipment.Weapon.atk + player.equipment.Armor.atk + player.equipment.Accessory.atk;
-        player.hp = 50 + player.equipment.Weapon.hp + player.equipment.Armor.hp + player.equipment.Accessory.hp;
-        updateUI();
     }
 
     function closeModal() {
         document.getElementById('compare-modal').style.display = 'none';
-        pendingItem = null;
+        updateStats();
     }
 
-    function checkUnlocks() {
-        if(player.lvl >= 5) {
-            const btn = document.getElementById('auto-chop-btn');
-            btn.disabled = false;
-            btn.innerText = "Start Auto-Chop";
-            btn.style.background = "#2d5a27";
+    function upgradeTree() {
+        let cost = player.treeLvl * 50;
+        if(player.stones >= cost) {
+            player.stones -= cost;
+            player.treeLvl++;
+            document.getElementById('upgrade-tree-btn').innerText = `Upgrade Tree (${(player.treeLvl * 50)} Stones)`;
+            updateStats();
         }
+    }
+
+    // --- LOGIC: BATTLE ---
+    function startBattle() {
+        document.getElementById('battle-btn').disabled = true;
+        let monster = {
+            name: "Shadow Wolf",
+            hp: 50 + (player.lvl * 20),
+            maxHp: 50 + (player.lvl * 20),
+            atk: 5 + (player.lvl * 3),
+            def: 2 + player.lvl
+        };
+        
+        document.getElementById('monster-name').innerText = monster.name;
+        let pTempHp = totalStats.hp;
+        let log = document.getElementById('battle-log');
+        log.innerHTML = "Battle Started!<br>";
+
+        let fight = setInterval(() => {
+            // Player Attacks
+            let pDmg = Math.max(1, totalStats.atk - monster.def);
+            monster.hp -= pDmg;
+            log.innerHTML += `You hit for ${pDmg}!<br>`;
+            
+            if(monster.hp <= 0) {
+                clearInterval(fight);
+                winBattle();
+                return;
+            }
+
+            // Monster Attacks
+            let mDmg = Math.max(1, monster.atk - totalStats.def);
+            pTempHp -= mDmg;
+            log.innerHTML += `${monster.name} hits for ${mDmg}!<br>`;
+
+            // Update Bars
+            document.getElementById('m-hp-bar').style.width = (monster.hp / monster.maxHp * 100) + "%";
+            document.getElementById('p-hp-bar').style.width = (pTempHp / totalStats.hp * 100) + "%";
+
+            if(pTempHp <= 0) {
+                clearInterval(fight);
+                log.innerHTML += "<b>You were defeated...</b>";
+                document.getElementById('battle-btn').disabled = false;
+            }
+            log.scrollTop = log.scrollHeight;
+        }, 800);
+    }
+
+    function winBattle() {
+        let reward = 10 + (player.lvl * 5);
+        player.stones += reward;
+        document.getElementById('battle-log').innerHTML += `<b style="color:green">Victory! Gained ${reward} Stones.</b>`;
+        document.getElementById('battle-btn').disabled = false;
+        updateStats();
+    }
+
+    function setSpirit(name) {
+        player.spirit = name;
+        document.getElementById('spirit-fox').classList.remove('selected');
+        document.getElementById('spirit-dragon').classList.remove('selected');
+        document.getElementById('spirit-' + name.toLowerCase()).classList.add('selected');
+        updateStats();
     }
 
     function toggleAuto() {
-        player.autoChop = !player.autoChop;
-        if(player.autoChop) {
-            autoInterval = setInterval(chop, 2000);
-            document.getElementById('auto-chop-btn').innerText = "Stop Auto-Chop";
-        } else {
-            clearInterval(autoInterval);
-            document.getElementById('auto-chop-btn').innerText = "Start Auto-Chop";
-        }
+        player.auto = !player.auto;
+        if(player.auto) autoInt = setInterval(chop, 2000);
+        else clearInterval(autoInt);
+        document.getElementById('auto-btn').innerText = player.auto ? "Stop Auto" : "Start Auto";
     }
 
-    function updateUI() {
-        document.getElementById('lvl').innerText = Math.floor(player.lvl);
-        document.getElementById('exp').innerText = Math.floor(player.exp);
-        document.getElementById('p-atk').innerText = player.atk;
-        document.getElementById('p-hp').innerText = player.hp;
-    }
-
-    updateUI();
+    // Init
+    updateStats();
 </script>
 </body>
 </html>
